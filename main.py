@@ -1,10 +1,7 @@
 import uvicorn as uvicorn
 from fastapi import FastAPI
-from dotenv import load_dotenv
 
 from api.views import api
-
-load_dotenv()
 
 app = FastAPI()
 
