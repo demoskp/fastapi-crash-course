@@ -79,7 +79,7 @@ def create_user(user: Annotated[UserOut, Depends(save_user)]) -> UserOut:
     return user
 
 
-@api.put("/users/{user_id}", status_code=201)
+@api.put("/users/{user_id}")
 def update_user(user: Annotated[UserOut, Depends(update_user_or_404)]) -> UserOut:
     return user
 
