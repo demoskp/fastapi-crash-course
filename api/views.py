@@ -80,8 +80,8 @@ def create_user(user: Annotated[UserOut, Depends(save_user)]) -> UserOut:
 
 
 @api.put("/users/{user_id}")
-def update_user(user: Annotated[UserOut, Depends(update_user_or_404)]) -> UserOut:
-    return user
+def update_user(user: Annotated[UserOut, Depends(update_user_or_404)]) -> dict[str, UserOut]:
+    return {"user": user}
 
 
 @api.delete("/users/{user_id}")
