@@ -1,11 +1,10 @@
-from typing import Annotated, List
+from typing import List, Annotated
 
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, Depends, HTTPException, Query, Body
 
-from schemas.user import UserIn, UserOut, UpdateUser
+from schemas.user import UserOut, UserIn, UpdateUser
 
 api = APIRouter(prefix="/api")
-
 
 users: List[UserOut] = [
     UserOut(id=1, first_name="John", last_name="Smith", email="jsmith@gmail.com"),
@@ -15,7 +14,7 @@ users: List[UserOut] = [
 ]
 
 
-def save_user(user: UserIn) -> UserOut:
+def save_user(user: UserIn):
     user_data = user.model_dump()
     user_data.pop("password")
     user_id = users[-1].id + 1
@@ -35,14 +34,7 @@ def update_user_or_404(user_id: int, update: UpdateUser) -> UserOut:
     return updated_user
 
 
-def get_user_or_404(user_id: int) -> UserOut:
-    user = next(filter(lambda u: u.id == user_id, users), None)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    return user
-
-
-def delete_user_or_404(user_id: int) -> None:
+def delete_user_or_404(user_id: int):
     found = False
     for user in users:
         if user.id == user_id:
@@ -53,18 +45,26 @@ def delete_user_or_404(user_id: int) -> None:
         raise HTTPException(status_code=404, detail="User not found")
 
 
+def get_user_or_404(user_id: int):
+    user = next(filter(lambda u: u.id == user_id, users), None)
+    if user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+    return user
+
+
 def filter_users(
         first_name: Annotated[str, Query()] = None,
         last_name: Annotated[str, Query()] = None,
-        email: Annotated[str, Query()] = None
+        email: Annotated[str, Query()] = None,
 ):
     filtered = users
     if first_name:
-        filtered = list(filter(lambda u: first_name in u.first_name, users))
+        filtered = list(filter(lambda u: first_name in u.first_name, filtered))
     if last_name:
-        filtered = list(filter(lambda u: last_name in u.last_name, users))
+        filtered = list(filter(lambda u: last_name in u.last_name, filtered))
     if email:
         filtered = list(filter(lambda u: email in u.email, filtered))
+
     return filtered
 
 
@@ -74,9 +74,8 @@ def get_users(filtered_users: Annotated[List[UserOut], Depends(filter_users)]) -
 
 
 @api.post("/users", status_code=201)
-def create_user(user: Annotated[UserOut, Depends(save_user)]) -> UserOut:
-    # user = save_user(user)
-    return user
+def create_user(user_out: Annotated[UserOut, Depends(save_user)]) -> UserOut:
+    return user_out
 
 
 @api.put("/users/{user_id}")
@@ -85,16 +84,11 @@ def update_user(user: Annotated[UserOut, Depends(update_user_or_404)]) -> dict[s
 
 
 @api.delete("/users/{user_id}")
-def create_user(user_id: int):
+def delete_user(user_id: int) -> dict[str, str]:
     delete_user_or_404(user_id)
-    return {"msg": "user deleted"}
+    return {"msg": "User deleted"}
 
 
 @api.get("/users/{user_id}")
-# def get_user(user_id: int) -> dict[str, UserOut]:
-#     user = next(filter(lambda u: u.id == user_id, users), None)
-#     if user is None:
-#         raise HTTPException(status_code=404, detail="Item not found")
-#     return {"user": user}
 def get_user(user: Annotated[UserOut, Depends(get_user_or_404)]) -> dict[str, UserOut]:
     return {"user": user}
